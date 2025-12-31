@@ -29,11 +29,25 @@ def download_media_infos(
 
     for ids in batch_list(media_ids, config.BATCH_SIZE):
         media_ids_str = ','.join(ids)
+        
+        retries = 3
+        while retries > 0:
+            try:
+                media_info_response = config.get_api() \
+                    .get_account_media(media_ids_str)
 
-        media_info_response = config.get_api() \
-            .get_account_media(media_ids_str)
-
-        media_info_response.raise_for_status()
+                media_info_response.raise_for_status()
+                break # Success, exit retry loop
+            except Exception as e:
+                if '429' in str(e):
+                    print_warning(f"Rate limited (429). Retrying in 5 seconds... ({retries} retries left)")
+                    sleep(5)
+                    retries -= 1
+                else:
+                    raise e
+        
+        if retries == 0:
+             raise ApiError(f"Failed to retrieve media info after retries due to rate limiting.")
 
         if media_info_response.status_code == 200:
             media_info = media_info_response.json()

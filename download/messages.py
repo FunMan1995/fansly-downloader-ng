@@ -25,13 +25,38 @@ def download_messages(config: FanslyConfig, state: DownloadState):
         .get_group()
 
     if groups_response.status_code == 200:
-        groups_response = groups_response.json()['response']['groups']
+        json_response = groups_response.json()['response']
+        # print_info(f"Debug: Response keys: {json_response.keys() if isinstance(json_response, dict) else 'Response is a list'}")
+        
+        if 'groups' in json_response:
+            groups_response = json_response['groups']
+        elif 'data' in json_response:
+            groups_response = json_response['data']
+        elif isinstance(json_response, list):
+             groups_response = json_response
+        else:
+             print_error(f"Unexpected response format. Keys found: {list(json_response.keys())}", 32)
+             input_enter_continue(config.interactive)
+             return
 
         # go through messages and check if we even have a chat history with the creator
         group_id = None
 
         for group in groups_response:
-            for user in group['users']:
+            # print_info(f"Debug: Group keys: {list(group.keys())}")
+            # if config.interactive:
+            #     input('Press ENTER to continue debug...')
+            
+            if 'users' in group:
+                users_list = group['users']
+            elif 'participants' in group:
+                 users_list = group['participants']
+            else:
+                 # Try to guess or just skip if we can't find user info
+                 # print_warning(f"Could not find user info in group keys: {list(group.keys())}")
+                 continue
+
+            for user in users_list:
                 if user['userId'] == state.creator_id:
                     group_id = group['id']
                     break

@@ -26,7 +26,7 @@ class FanslyConfig(object):
     DUPLICATE_THRESHOLD: int = 50
 
     # Batch size for batched API access (Fansly API size limit)
-    BATCH_SIZE: int = 150
+    BATCH_SIZE: int = 50
 
     # Configuration file
     config_path: Optional[Path] = None
